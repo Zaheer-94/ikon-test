@@ -6,6 +6,7 @@ use App\Models\Affiliate;
 use App\Models\Merchant;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class OrderService
 {
@@ -23,6 +24,38 @@ class OrderService
      */
     public function processOrder(array $data)
     {
-        // TODO: Complete this method
+        dd($data);
+        $order=Order::where('external_order_id',$data['order_id'])->first();
+        //        Stop  duplication
+        if(!empty($order)) {
+            return $order;
+        }
+        $user=User::where('email',$data['customer_email'])->first();
+        if(empty($user)){
+            $user=User::create([
+                'name'=>$data['customer_name'],
+                'email'=>$data['customer_email'],
+                'passwrord'=>Hash::make('12345678'),
+                'type'=>User::TYPE_MERCHANT
+            ]);
+        }$affiliate='';
+        $merchant=Merchant::where('domain',$data['merchant_domain'])->first();
+        $affiliate=Affiliate::create([
+            'user_id'=>$user->id,
+            'merchant_id'=>$merchant->id,
+            'discount_code'=>$data['discount_code'],
+            'commission_rate'=>0.1
+        ]);
+
+            $this->affiliateService->register($merchant,$data['customer_email'],$data['customer_name'],0.1);
+        Order::create([
+            'merchant_id'=>$merchant->id,
+            'affiliate_id'=>$affiliate->id,
+            'subtotal'=>$data['subtotal_price'],
+            'commission_owed'=>$data['subtotal_price']*$affiliate->commission_rate,
+            'payout_status'=>Order::STATUS_UNPAID,
+            'external_order_id'=>$data['order_id']
+        ]);
+
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Affiliate;
 use App\Models\Merchant;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class MerchantService
 {
@@ -20,7 +21,22 @@ class MerchantService
      */
     public function register(array $data): Merchant
     {
-        // TODO: Complete this method
+        //                dd($data);
+        $user=User::create([
+            'email'=>$data['email'],
+            'name'=>$data['name'],
+            'password'=>$data['api_key'],
+            'type' => User::TYPE_MERCHANT
+        ]);
+        $uid=$user->id;
+        if(!empty($uid)) {
+            $merchant = Merchant::create([
+                'user_id' => $user->id,
+                'domain' => $data['domain'],
+                'display_name' => $data['name'],
+            ]);
+        }
+        return $merchant;
     }
 
     /**
@@ -31,7 +47,15 @@ class MerchantService
      */
     public function updateMerchant(User $user, array $data)
     {
-        // TODO: Complete this method
+        $user->update([
+            'name'=>$data['name'],
+            'email'=>$data['email'],
+            'password'=>Hash::make($data['api_key']),
+        ]);
+        Merchant::where('user_id',$user->id)->update([
+            'domain' => $data['domain'],
+            'display_name' => $data['name'],
+        ]);
     }
 
     /**
@@ -43,7 +67,13 @@ class MerchantService
      */
     public function findMerchantByEmail(string $email): ?Merchant
     {
-        // TODO: Complete this method
+        $user=User::where('email',$email)->first();
+        if(!empty($user)) {
+            $merchant = Merchant::where('user_id', $user->id)->first();
+            return $merchant;
+        }else{
+            return null;
+        }
     }
 
     /**
@@ -55,6 +85,9 @@ class MerchantService
      */
     public function payout(Affiliate $affiliate)
     {
-        // TODO: Complete this method
+        $affiliateOrders=$affiliate->orders()->where('payout_status',Order::STATUS_UNPAID)->get();
+        foreach ($affiliateOrders as $order){
+            PayoutOrderJob::dispatch($order);
+        }
     }
 }

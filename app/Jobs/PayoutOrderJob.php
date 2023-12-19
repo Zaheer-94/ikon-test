@@ -11,6 +11,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PayoutOrderJob implements ShouldQueue
 {
@@ -34,5 +35,14 @@ class PayoutOrderJob implements ShouldQueue
     public function handle(ApiService $apiService)
     {
         // TODO: Complete this method
+        try{
+            $apiService->sendPayout($this->order->affiliate->user->email, $this->order->commission_owed);
+            // Update order status to paid
+            $this->order->update(['payout_status' => Order::STATUS_PAID]);
+        }catch (\Exception $e){
+            $this->order->update(['payout_status' => Order::STATUS_UNPAID]);
+            //            Log::error('Payout failed: ' . $e->getMessage());
+            throw $e;
+        }
     }
 }

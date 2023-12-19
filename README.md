@@ -15,7 +15,7 @@ You'll need to complete the following files:
 
 * `app/Services/MerchantService.php`
 * `app/Services/AffiliateService.php`
-* `app/Services/OrderService.php`
+* `app/Services/OrderService.php  **Error affiliate_id 1 for Order** `
 * `app/Jobs/PayoutOrderJob.php`
 * `app/Http/Controllers/WebhookController.php`
 * `app/Http/Controllers/MerchantController.php`
